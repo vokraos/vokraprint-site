@@ -432,7 +432,13 @@ img{max-width:100%}
 @media (max-width:560px){.catalog-banner{display:block;padding:22px}.catalog-banner-note{margin-top:20px;padding:14px 0 0;border-left:0;border-top:1px solid var(--line)}.catalog-grid{grid-template-columns:1fr}.catalog-card-media{height:220px}.catalog-detail-actions{display:grid;align-items:stretch;width:100%}.catalog-detail-actions .btn,.catalog-detail-actions .ghost{width:100%;justify-content:center}}
 </style>
 
-</head>
+
+<style id="vokra-catalog-hierarchy">
+.catalog-subjects,.catalog-themes{align-items:center}
+.catalog-step-label{width:100%;font:10px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-right:4px}
+.catalog-themes{margin-top:10px}
+</style>
+\n</head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
@@ -603,7 +609,7 @@ img{max-width:100%}
           <button id="catalog-back" class="ghost" type="button">← Назад к услугам</button>
           <p class="mono eyebrow">Готовые предложения VOKRA</p>
           <h2 id="catalog-title" class="h1" tabindex="-1">Магазин VOKRA</h2>
-          <p class="lede">Выберите готовое изделие или найдите нужный вариант в каталоге. Услуги печати остаются в отдельных воронках.</p>
+          <p class="lede">Сначала выберите предмет, затем тему и готовое предложение. Услуги печати остаются в отдельных воронках.</p>
         </div>
         <div id="catalog-status" class="catalog-status" role="status">Демо-каталог · API WB не подключён</div>
       </div>
@@ -633,12 +639,15 @@ img{max-width:100%}
         </div>
       </div>
 
-      <div id="catalog-categories" class="catalog-categories" aria-label="Категории">
-        <button type="button" class="catalog-chip active" data-category="all">Все</button>
-        <button type="button" class="catalog-chip" data-category="Футболки">Футболки</button>
-        <button type="button" class="catalog-chip" data-category="Худи">Худи</button>
-        <button type="button" class="catalog-chip" data-category="Оверсайзы">Оверсайзы</button>
-        <button type="button" class="catalog-chip" data-category="Термонаклейки">Термонаклейки</button>
+      <div id="catalog-subjects" class="catalog-categories catalog-subjects" aria-label="Предмет">
+        <span class="catalog-step-label">1. Предмет</span>
+        <button type="button" class="catalog-chip active" data-subject="all">Все предметы</button>
+        <button type="button" class="catalog-chip" data-subject="Футболки">Футболки</button>
+        <button type="button" class="catalog-chip" data-subject="Худи">Худи</button>
+        <button type="button" class="catalog-chip" data-subject="Термонаклейки">Термонаклейки</button>
+      </div>
+      <div id="catalog-themes" class="catalog-categories catalog-themes" aria-label="Тема">
+        <span class="catalog-step-label">2. Тема</span>
       </div>
 
       <div id="catalog-grid" class="catalog-grid" aria-live="polite"></div>
@@ -1037,13 +1046,13 @@ function mountFaq(host,items){
 
 /* ---------- ready offers catalog ---------- */
 var CATALOG_CONFIG={endpoint:window.VOKRA_CATALOG_ENDPOINT||'/api/catalog',timeout:5000};
-var CATALOG={products:[],query:'',seller:'all',category:'all',loaded:false,detail:null};
+var CATALOG={products:[],query:'',seller:'all',subject:'all',theme:'all',loaded:false,detail:null};
 function catalogDemo(){
   var imgs=[].slice.call(document.querySelectorAll('.shop-card img')).map(function(x){return x.src;});
   return [
-    {id:'demo-film',title:'Термонаклейки VOKRA',category:'Термонаклейки',seller:'main',sellerLabel:'Магазин VOKRA',description:'Готовые DTF-принты для переноса на одежду.',image:imgs[0]||'',source:'demo',price:'Цена на WB'},
-    {id:'demo-tee',title:'Футболка VOKRA с принтом',category:'Футболки',seller:'main',sellerLabel:'Магазин VOKRA',description:'Готовое изделие с фирменным принтом.',image:imgs[1]||'',source:'demo',price:'Цена на WB'},
-    {id:'demo-oversize',title:'Оверсайз VOKRA',category:'Оверсайзы',seller:'partner',sellerLabel:'Магазин партнёра',description:'Свободная посадка и готовый дизайн.',image:imgs[2]||'',source:'demo',price:'Цена на WB'}
+    {id:'demo-film',title:'Термонаклейки VOKRA',subject:'Термонаклейки',theme:'Сериалы',category:'Термонаклейки',seller:'main',sellerLabel:'Магазин VOKRA',description:'Готовые DTF-принты для переноса на одежду.',image:imgs[0]||'',source:'demo',price:'Цена на WB'},
+    {id:'demo-tee',title:'Футболка VOKRA с принтом',subject:'Футболки',theme:'Именные',category:'Футболки',seller:'main',sellerLabel:'Магазин VOKRA',description:'Готовое изделие с фирменным принтом.',image:imgs[1]||'',source:'demo',price:'Цена на WB'},
+    {id:'demo-oversize',title:'Оверсайз VOKRA',subject:'Футболки',theme:'Оверсайзы',category:'Футболки',seller:'partner',sellerLabel:'Магазин партнёра',description:'Свободная посадка и готовый дизайн.',image:imgs[2]||'',source:'demo',price:'Цена на WB'}
   ];
 }
 function catalogNormalize(raw){
@@ -1053,7 +1062,7 @@ function catalogNormalize(raw){
     var sellerKey=p.sellerKey||p.seller||p.storeKey||'main';
     return {
       id:String(nm),nmId:p.nmId||p.nmID||'',title:p.title||p.name||p.subjectName||'Товар VOKRA',
-      category:p.category||p.subjectName||'Каталог',seller:sellerKey,
+      subject:p.subject||p.subjectName||p.category||'Каталог',theme:p.theme||p.themeName||p.collection||'Разное',category:p.category||p.subjectName||'Каталог',seller:sellerKey,
       sellerLabel:p.sellerLabel||(sellerKey==='partner'?'Магазин партнёра':'Магазин VOKRA'),
       description:p.description||p.brand||'Готовое предложение VOKRA.',
       image:p.image||p.imageUrl||p.photo||((p.photos||[])[0]||''),
@@ -1074,11 +1083,24 @@ function catalogPrice(v){
 }
 function catalogMatches(p){
   var q=CATALOG.query.toLowerCase();
-  var text=[p.title,p.category,p.description,p.nmId,p.sellerLabel].join(' ').toLowerCase();
-  return (!q||text.indexOf(q)>=0)&&(CATALOG.seller==='all'||p.seller===CATALOG.seller)&&(CATALOG.category==='all'||p.category===CATALOG.category);
+  var text=[p.title,p.subject,p.theme,p.description,p.nmId,p.sellerLabel].join(' ').toLowerCase();
+  return (!q||text.indexOf(q)>=0)&&(CATALOG.seller==='all'||p.seller===CATALOG.seller)&&(CATALOG.subject==='all'||p.subject===CATALOG.subject)&&(CATALOG.theme==='all'||p.theme===CATALOG.theme);
+}
+function renderCatalogThemes(){
+  var host=$('catalog-themes');if(!host)return;
+  var names=[];CATALOG.products.forEach(function(p){if(CATALOG.subject==='all'||p.subject===CATALOG.subject){if(p.theme&&names.indexOf(p.theme)<0)names.push(p.theme);}});
+  names.sort(function(a,b){return a.localeCompare(b,'ru');});
+  host.replaceChildren(el('span',{class:'catalog-step-label'},'2. Тема'));
+  var all=el('button',{type:'button',class:'catalog-chip'+(CATALOG.theme==='all'?' active':'')},'Все темы');
+  all.onclick=function(){CATALOG.theme='all';renderCatalog();};host.append(all);
+  names.forEach(function(name){
+    var b=el('button',{type:'button',class:'catalog-chip'+(CATALOG.theme===name?' active':'')},name);
+    b.onclick=function(){CATALOG.theme=name;renderCatalog();};host.append(b);
+  });
 }
 function renderCatalog(){
   var grid=$('catalog-grid'),empty=$('catalog-empty');if(!grid)return;
+  renderCatalogThemes();
   var list=CATALOG.products.filter(catalogMatches);
   grid.replaceChildren();empty.hidden=!!list.length;
   list.forEach(function(p){
@@ -1087,7 +1109,7 @@ function renderCatalog(){
     if(p.image){var im=el('img',{src:p.image,alt:p.title,loading:'lazy'});media.append(im);}
     media.append(el('span',{class:'catalog-card-badge'},p.source==='demo'?'Демо':'WB'));
     var copy=el('div',{class:'catalog-card-copy'});
-    copy.append(el('p',{class:'mono'},p.sellerLabel));
+    copy.append(el('p',{class:'mono'},p.sellerLabel+' · '+p.subject+' · '+p.theme));
     copy.append(el('h3',null,p.title));
     copy.append(el('p',null,p.description));
     var foot=el('div',{class:'catalog-card-foot'},el('strong',null,catalogPrice(p.price)));
@@ -1100,7 +1122,7 @@ function openCatalogDetail(p){
   CATALOG.detail=p;
   $('catalog-detail').hidden=false;$('catalog-grid').hidden=true;$('catalog-empty').hidden=true;
   $('catalog-detail-image').src=p.image||'';$('catalog-detail-image').alt=p.title;
-  $('catalog-detail-kicker').textContent=p.sellerLabel+' · '+p.category;
+  $('catalog-detail-kicker').textContent=p.sellerLabel+' · '+p.subject+' · '+p.theme;
   $('catalog-detail-title').textContent=p.title;
   $('catalog-detail-description').textContent=p.description;
   $('catalog-detail-price').textContent=catalogPrice(p.price);
@@ -1119,7 +1141,7 @@ function bindCatalog(){
   $('catalog-empty-order').onclick=function(){go('print');};
   $('catalog-search').addEventListener('input',function(){CATALOG.query=this.value.trim();closeCatalogDetail();renderCatalog();});
   document.querySelectorAll('.catalog-filter').forEach(function(b){b.onclick=function(){CATALOG.seller=b.getAttribute('data-seller');document.querySelectorAll('.catalog-filter').forEach(function(x){x.classList.toggle('active',x===b);});closeCatalogDetail();renderCatalog();};});
-  document.querySelectorAll('.catalog-chip').forEach(function(b){b.onclick=function(){CATALOG.category=b.getAttribute('data-category');document.querySelectorAll('.catalog-chip').forEach(function(x){x.classList.toggle('active',x===b);});closeCatalogDetail();renderCatalog();};});
+  document.querySelectorAll('[data-subject]').forEach(function(b){b.onclick=function(){CATALOG.subject=b.getAttribute('data-subject');CATALOG.theme='all';document.querySelectorAll('[data-subject]').forEach(function(x){x.classList.toggle('active',x===b);});closeCatalogDetail();renderCatalog();};});
 }
 async function loadCatalog(){
   bindCatalog();
