@@ -1046,7 +1046,7 @@ function mountFaq(host,items){
 
 /* ---------- ready offers catalog ---------- */
 var CATALOG_CONFIG={endpoint:window.VOKRA_CATALOG_ENDPOINT||'/api/v1/public/catalog',timeout:30000};
-var CATALOG={products:[],query:'',seller:'all',subject:'all',theme:'all',loaded:false,detail:null};
+var CATALOG={products:[],query:'',seller:'all',subject:'all',theme:'all',loaded:false,detail:null};\nvar CATALOG_REQUEST=0;var CATALOG_SEARCH_TIMER=null;
 function catalogDemo(){
   var imgs=[].slice.call(document.querySelectorAll('.shop-card img')).map(function(x){return x.src;});
   return [
@@ -1092,10 +1092,10 @@ function renderCatalogThemes(){
   names.sort(function(a,b){return a.localeCompare(b,'ru');});
   host.replaceChildren(el('span',{class:'catalog-step-label'},'2. Тема'));
   var all=el('button',{type:'button',class:'catalog-chip'+(CATALOG.theme==='all'?' active':'')},'Все темы');
-  all.onclick=function(){CATALOG.theme='all';renderCatalog();};host.append(all);
+  all.onclick=function(){CATALOG.theme='all';renderCatalog();loadCatalog(true);};host.append(all);
   names.forEach(function(name){
     var b=el('button',{type:'button',class:'catalog-chip'+(CATALOG.theme===name?' active':'')},name);
-    b.onclick=function(){CATALOG.theme=name;renderCatalog();};host.append(b);
+    b.onclick=function(){CATALOG.theme=name;renderCatalog();loadCatalog(true);};host.append(b);
   });
 }
 function renderCatalog(){
@@ -1139,23 +1139,34 @@ function bindCatalog(){
   $('catalog-detail-back').onclick=closeCatalogDetail;
   $('catalog-detail-order').onclick=function(){go('print');};
   $('catalog-empty-order').onclick=function(){go('print');};
-  $('catalog-search').addEventListener('input',function(){CATALOG.query=this.value.trim();closeCatalogDetail();renderCatalog();});
-  document.querySelectorAll('.catalog-filter').forEach(function(b){b.onclick=function(){CATALOG.seller=b.getAttribute('data-seller');document.querySelectorAll('.catalog-filter').forEach(function(x){x.classList.toggle('active',x===b);});closeCatalogDetail();renderCatalog();};});
-  document.querySelectorAll('[data-subject]').forEach(function(b){b.onclick=function(){CATALOG.subject=b.getAttribute('data-subject');CATALOG.theme='all';document.querySelectorAll('[data-subject]').forEach(function(x){x.classList.toggle('active',x===b);});closeCatalogDetail();renderCatalog();};});
+  $('catalog-search').addEventListener('input',function(){CATALOG.query=this.value.trim();closeCatalogDetail();renderCatalog();clearTimeout(CATALOG_SEARCH_TIMER);CATALOG_SEARCH_TIMER=setTimeout(function(){loadCatalog(true);},350);});
+  document.querySelectorAll('.catalog-filter').forEach(function(b){b.onclick=function(){CATALOG.seller=b.getAttribute('data-seller');document.querySelectorAll('.catalog-filter').forEach(function(x){x.classList.toggle('active',x===b);});closeCatalogDetail();renderCatalog();loadCatalog(true);};});
+  document.querySelectorAll('[data-subject]').forEach(function(b){b.onclick=function(){CATALOG.subject=b.getAttribute('data-subject');CATALOG.theme='all';document.querySelectorAll('[data-subject]').forEach(function(x){x.classList.toggle('active',x===b);});closeCatalogDetail();renderCatalog();loadCatalog(true);};});
 }
-async function loadCatalog(){
+async function loadCatalog(force){
   bindCatalog();
-  if(CATALOG.loaded)return;
-  CATALOG.products=catalogDemo();renderCatalog();
+  if(CATALOG.loaded&&!force)return;
+  if(!CATALOG.loaded){CATALOG.products=catalogDemo();renderCatalog();}
+  var req=++CATALOG_REQUEST;
   try{
     var ctl=new AbortController();var timer=setTimeout(function(){ctl.abort();},CATALOG_CONFIG.timeout);
-    var res=await fetch(CATALOG_CONFIG.endpoint,{headers:{Accept:'application/json'},signal:ctl.signal});clearTimeout(timer);
+    var params=[];
+    if(CATALOG.query)params.push('q='+encodeURIComponent(CATALOG.query));
+    if(CATALOG.seller&&CATALOG.seller!=='all')params.push('seller='+encodeURIComponent(CATALOG.seller));
+    if(CATALOG.subject&&CATALOG.subject!=='all')params.push('subject='+encodeURIComponent(CATALOG.subject));
+    if(CATALOG.theme&&CATALOG.theme!=='all')params.push('theme='+encodeURIComponent(CATALOG.theme));
+    params.push('limit=60');
+    var url=CATALOG_CONFIG.endpoint+(CATALOG_CONFIG.endpoint.indexOf('?')>=0?'&':'?')+params.join('&');
+    var res=await fetch(url,{headers:{Accept:'application/json'},signal:ctl.signal});clearTimeout(timer);
     if(!res.ok)throw Error('catalog '+res.status);
     var data=await res.json();var normalized=catalogNormalize(data);
-    if(normalized.length){CATALOG.products=normalized;catalogStatus('Каталог обновлён через API WB',true);renderCatalog();}
+    if(req!==CATALOG_REQUEST)return;
+    if(normalized.length||data.total===0){CATALOG.products=normalized;catalogStatus('Каталог обновлён через API WB',true);renderCatalog();}
     else catalogStatus('Демо-каталог · API WB не вернул товары',false);
-  }catch(e){catalogStatus('Демо-каталог · API WB не подключён',false);}
-  CATALOG.loaded=true;
+  }catch(e){
+    if(req===CATALOG_REQUEST&&(!CATALOG.products.length||CATALOG.products[0].source==='demo'))catalogStatus('Демо-каталог · API WB не подключён',false);
+  }
+  if(req===CATALOG_REQUEST)CATALOG.loaded=true;
 }
 function openCatalog(){
   show('catalog');bindCatalog();loadCatalog();
