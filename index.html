@@ -1046,7 +1046,8 @@ function mountFaq(host,items){
 
 /* ---------- ready offers catalog ---------- */
 var CATALOG_CONFIG={endpoint:window.VOKRA_CATALOG_ENDPOINT||'/api/v1/public/catalog',timeout:30000};
-var CATALOG={products:[],query:'',seller:'all',subject:'all',theme:'all',loaded:false,detail:null};\nvar CATALOG_REQUEST=0;var CATALOG_SEARCH_TIMER=null;
+var CATALOG={products:[],query:'',seller:'all',subject:'all',theme:'all',loaded:false,detail:null};
+var CATALOG_REQUEST=0;var CATALOG_SEARCH_TIMER=null;
 function catalogDemo(){
   var imgs=[].slice.call(document.querySelectorAll('.shop-card img')).map(function(x){return x.src;});
   return [
