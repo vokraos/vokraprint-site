@@ -1045,7 +1045,7 @@ function mountFaq(host,items){
 
 
 /* ---------- ready offers catalog ---------- */
-var CATALOG_CONFIG={endpoint:window.VOKRA_CATALOG_ENDPOINT||'https://shop.vokraprint.ru/api/v1/public/catalog',timeout:30000};
+var CATALOG_CONFIG={endpoint:window.VOKRA_CATALOG_ENDPOINT||'/api/v1/public/catalog',timeout:30000};
 var CATALOG={products:[],query:'',seller:'all',subject:'all',theme:'all',loaded:false,detail:null};
 function catalogDemo(){
   var imgs=[].slice.call(document.querySelectorAll('.shop-card img')).map(function(x){return x.src;});
